@@ -27,7 +27,8 @@ from ensembl.api.core import Slice, RegionTopology, CoordSystem, Feature
 
 import warnings
 
-__all__ = [ 'SliceAdaptor' ]
+__all__ = ['SliceAdaptor']
+
 
 class SliceAdaptor():
     """Contains all the slice related functions over Slice ORM
@@ -38,7 +39,8 @@ class SliceAdaptor():
                             session: Session,
                             seq_region_name: str,
                             coord_system_name: str,
-                            version: Optional[str] = None, # this is Assembly name
+                            # this is Assembly name
+                            version: Optional[str] = None,
                             start: int = 1,
                             end: Optional[int] = None,
                             strand: Strand = Strand.FORWARD
@@ -71,7 +73,7 @@ class SliceAdaptor():
         """
         if not session:
             raise ValueError()
-        
+
         slices = []
         if not start:
             start = 1
@@ -82,39 +84,42 @@ class SliceAdaptor():
             raise ValueError('seq_region_name argument is required')
         if not coord_system_name:
             raise ValueError('coord_system_name argument is required')
-        
+
         subq = (select(SeqRegionAttribORM.seq_region_id, SeqRegionAttribORM.value)
                 .join(AttribTypeORM, SeqRegionAttribORM.attrib_type_id == AttribTypeORM.attrib_type_id)
                 .where(AttribTypeORM.code == 'circular_seq')
                 .subquery()
                 )
-        sr_attr_subq = aliased(SeqRegionAttribORM, subq, name="seq_region_attrib")
+        sr_attr_subq = aliased(SeqRegionAttribORM, subq,
+                               name="seq_region_attrib")
 
         stmt = (select(
                 Bundle("SeqRegion",
-                        SeqRegionORM.seq_region_id,
-                        SeqRegionORM.name.label('sr_name'),
-                        SeqRegionORM.length,
-                        SeqRegionORM.coord_system_id
-                ),
+                       SeqRegionORM.seq_region_id,
+                       SeqRegionORM.name.label('sr_name'),
+                       SeqRegionORM.length,
+                       SeqRegionORM.coord_system_id
+                       ),
                 Bundle("SRAttrCircular",
                        sr_attr_subq.value))
-        .join(SeqRegionORM.coord_system)
-        .join(sr_attr_subq, SeqRegionORM.seq_region_id == sr_attr_subq.seq_region_id, isouter=True)
-        .where(and_(CoordSystemORM.name == coord_system_name, SeqRegionORM.name == seq_region_name))
-        )
-        
+                .join(SeqRegionORM.coord_system)
+                .join(sr_attr_subq, SeqRegionORM.seq_region_id == sr_attr_subq.seq_region_id, isouter=True)
+                .where(and_(CoordSystemORM.name == coord_system_name, SeqRegionORM.name == seq_region_name))
+                )
+
         if version:
             if version == 'default':
                 version = CoordSystemAdaptor.fetch_default_version(session)
             stmt = stmt.filter(CoordSystemORM.version == version)
-        
+
         rows = session.execute(stmt).all()
-        
+
         for row in rows:
-            cs = CoordSystemAdaptor.fetch_by_dbID(session, row.SeqRegion.coord_system_id)
+            cs = CoordSystemAdaptor.fetch_by_dbID(
+                session, row.SeqRegion.coord_system_id)
             strand = strand if strand else Strand.FORWARD
-            topology = 'CIRCULAR' if cls._is_circular(session, row.SRAttrCircular.value) else 'LINEAR'
+            topology = 'CIRCULAR' if cls._is_circular(
+                session, row.SRAttrCircular.value) else 'LINEAR'
             s = Slice(
                 cs,
                 row.SeqRegion.sr_name,
@@ -124,17 +129,17 @@ class SliceAdaptor():
                 strand,
                 internal_id=row.SeqRegion.seq_region_id,
                 topology=topology
-            )   
+            )
             slices.append(s)
-            
+
         if len(slices) == 0:
-            warnings.warn(f'Could not find any region with name {seq_region_name} and coordinate {coord_system_name}', UserWarning)
+            warnings.warn(
+                f'Could not find any region with name {seq_region_name} and coordinate {coord_system_name}', UserWarning)
 
         return slices
-    
 
     @classmethod
-    def fetch_by_seq_region_id(cls, 
+    def fetch_by_seq_region_id(cls,
                                session: Session,
                                seq_region_id: int,
                                start: int = 1,
@@ -143,7 +148,7 @@ class SliceAdaptor():
                                ) -> Slice:
         if not session:
             raise ValueError()
-        
+
         if not isinstance(seq_region_id, int) or seq_region_id <= 0:
             raise ValueError()
 
@@ -152,30 +157,33 @@ class SliceAdaptor():
                 .where(AttribTypeORM.code == 'circular_seq')
                 .subquery()
                 )
-        sr_attr_subq = aliased(SeqRegionAttribORM, subq, name="seq_region_attrib")
+        sr_attr_subq = aliased(SeqRegionAttribORM, subq,
+                               name="seq_region_attrib")
         stmt = (select(
                 Bundle("SeqRegion",
-                        SeqRegionORM.seq_region_id,
-                        SeqRegionORM.name,
-                        SeqRegionORM.length
-                ),
+                       SeqRegionORM.seq_region_id,
+                       SeqRegionORM.name,
+                       SeqRegionORM.length
+                       ),
                 Bundle("CoordSystem",
-                        CoordSystemORM.coord_system_id,
-                        CoordSystemORM.name,
-                        CoordSystemORM.version,
-                        CoordSystemORM.rank
-                ),
+                       CoordSystemORM.coord_system_id,
+                       CoordSystemORM.name,
+                       CoordSystemORM.version,
+                       CoordSystemORM.rank
+                       ),
                 Bundle("SRAttrCircular",
-                sr_attr_subq.value))
-        .join(SeqRegionORM.coord_system)
-        .join(sr_attr_subq, SeqRegionORM.seq_region_id == sr_attr_subq.seq_region_id, isouter=True)
-        .where(SeqRegionORM.seq_region_id == seq_region_id)
-        )
+                       sr_attr_subq.value))
+                .join(SeqRegionORM.coord_system)
+                .join(sr_attr_subq, SeqRegionORM.seq_region_id == sr_attr_subq.seq_region_id, isouter=True)
+                .where(SeqRegionORM.seq_region_id == seq_region_id)
+                )
 
         result = session.execute(stmt).first()
 
-        topology = 'CIRCULAR' if cls._is_circular(session, result.SRAttrCircular.value) else 'LINEAR'
-        cs = CoordSystemAdaptor.fetch_by_dbID(session, result.CoordSystem.coord_system_id)
+        topology = 'CIRCULAR' if cls._is_circular(
+            session, result.SRAttrCircular.value) else 'LINEAR'
+        cs = CoordSystemAdaptor.fetch_by_dbID(
+            session, result.CoordSystem.coord_system_id)
         return Slice(
             cs,
             result.SeqRegion.name,
@@ -185,9 +193,8 @@ class SliceAdaptor():
             strand,
             internal_id=result.SeqRegion.seq_region_id,
             topology=topology
-        )  
+        )
 
-        
     @classmethod
     def fetch_by_name(cls,
                       session: Session,
@@ -215,32 +222,33 @@ class SliceAdaptor():
         """
         if not ':' in name:
             raise ValueError('Malfomred name for Slice')
-        
+
         array = name.split(':')
 
         if len(array) < 3 or len(array) > 6:
             raise ValueError(
                 f'Malfomred slice name [{name}]. Format is "coord_system:version:name:start:end:strand"')
-        
+
         # make len(array) = 6, adding None as appropriate
         array.extend((None,)*(6-len(array)))
 
         sl = cls.fetch_by_seq_region(session,
-                                       seq_region_name=array[2],
-                                       coord_system_name=array[0],
-                                       version=array[1],
-                                       start=array[3],
-                                       end=array[4],
-                                       strand=Strand(int(array[5])) if array[5] else None
-                                       )
+                                     seq_region_name=array[2],
+                                     coord_system_name=array[0],
+                                     version=array[1],
+                                     start=array[3],
+                                     end=array[4],
+                                     strand=Strand(
+                                         int(array[5])) if array[5] else None
+                                     )
         if len(sl) == 1:
             return sl[0]
-        warnings.warn(f'Could find more than one region with name {name}', UserWarning)
+        warnings.warn(
+            f'Could find more than one region with name {name}', UserWarning)
         return None
 
-    
     @classmethod
-    def fetch_all(cls, 
+    def fetch_all(cls,
                   session: Session,
                   coord_system_name: str,
                   coord_system_version: str = None,
@@ -283,21 +291,25 @@ class SliceAdaptor():
         Status     : At Risk
                    : under development
         """
-        orig_cs = CoordSystemAdaptor.fetch_by_name(session, coord_system_name, coord_system_version)
+        orig_cs = CoordSystemAdaptor.fetch_by_name(
+            session, coord_system_name, coord_system_version)
         if not orig_cs:
             return []
-        
+
         bad_vals = {}
         if not include_non_reference:
-            bad_vals.update(dict.fromkeys(cls._fetch_all_seq_region_ids_by_at_code(session, 'non_ref'), 1))
-        
+            bad_vals.update(dict.fromkeys(
+                cls._fetch_all_seq_region_ids_by_at_code(session, 'non_ref'), 1))
+
         if not include_lrg:
-            bad_vals.update(dict.fromkeys(cls._fetch_all_seq_region_ids_by_at_code(session, 'lrg'), 1))
+            bad_vals.update(dict.fromkeys(
+                cls._fetch_all_seq_region_ids_by_at_code(session, 'lrg'), 1))
 
         if orig_cs.is_toplevel:
             seq_regs = cls._fetch_all_toplevel_seq_regions(session)
         else:
-            seq_regs = cls._fetch_all_seq_regions_by_coord_system_id(session, orig_cs.internal_id)
+            seq_regs = cls._fetch_all_seq_regions_by_coord_system_id(
+                session, orig_cs.internal_id)
 
         out_slices = []
         for (seq_region_id, name, length, circular_attr_value) in seq_regs:
@@ -319,12 +331,11 @@ class SliceAdaptor():
                 length,
                 1,
                 length,
-                topology = tpl
+                topology=tpl
             )
             out_slices.append(slice)
 
-        return out_slices          
-
+        return out_slices
 
     @classmethod
     def fetch_by_region_unique(cls,
@@ -363,42 +374,42 @@ class SliceAdaptor():
                    : under development
         """
         return cls.fetch_by_seq_region(session,
-                            seq_region_name,
-                            coord_system_name,
-                            version, # this is Assembly name
-                            start,
-                            end,
-                            strand)
+                                       seq_region_name,
+                                       coord_system_name,
+                                       version,  # this is Assembly name
+                                       start,
+                                       end,
+                                       strand)
 
-    
     @classmethod
     def project(cls, session: Session, slice: Slice, target_cs: CoordSystem) -> tuple:
         if not session:
             raise ValueError(f'Need a session to a DB to work')
         if not target_cs or not isinstance(target_cs, CoordSystem):
-            raise ValueError(f'Need a coordinate system to project the slice to')
+            raise ValueError(
+                f'Need a coordinate system to project the slice to')
         if not slice:
             warnings.warn(f'Need a slice to start from', UserWarning)
             return None
         if not slice.coord_system:
-            warnings.warn(f'Cannot project slice {slice.name()} without an attached coordinate system', UserWarning)
+            warnings.warn(
+                f'Cannot project slice {slice.name()} without an attached coordinate system', UserWarning)
             return None
-        
+
         slice_cs = slice.coord_system
-        
+
         # no mapping is needed if the requested coord system is the one we are in
         # but we do need to check if some of the slice is outside of defined regions
         if slice_cs == target_cs:
             (st, en, new_slice) = slice._constrain_to_region()
             return ((st, en, new_slice),)
-        
+
         # $normal_slice = $normal_slice_proj->[2]; this is the slice
         ama = AssemblyMapperAdaptor(session, slice_cs, target_cs)
         asm_mapper = ama.fetch_by_CoordSystems(load_mappings=True)
-        
+
         return asm_mapper.map(slice)
 
-    
     @classmethod
     def fetch_by_feature(cls, session: Session, feat: Feature, size: int = 100) -> Slice:
         """
@@ -424,7 +435,8 @@ class SliceAdaptor():
         if not session or not feat:
             raise ValueError(f'Missing argument')
         if not isinstance(feat, Feature):
-            raise ValueError(f'Expected feature object. Got instead {type(feat)}')
+            raise ValueError(
+                f'Expected feature object. Got instead {type(feat)}')
         if not feat.get_slice() or not isinstance(feat.get_slice(), Slice):
             raise ValueError(f'Feature must be attached to a valid slice.')
         if size is not None and size < 100:
@@ -434,7 +446,7 @@ class SliceAdaptor():
         feat_slice = feat.get_slice()
         fstart = feat.start
         fend = feat.end
-        #convert the feature slice coordinates to seq_region coordinates
+        # convert the feature slice coordinates to seq_region coordinates
         if feat_slice.strand == Strand.REVERSE:
             tmp = fstart
             fstart = feat_slice.end - fend + 1
@@ -443,8 +455,8 @@ class SliceAdaptor():
             fstart += feat_slice.start - 1
             fend += feat_slice.start - 1
 
-        size = int( (size-100)/200 * (fend-fstart+1) )
-        
+        size = int((size-100)/200 * (fend-fstart+1))
+
         return Slice(
             feat_slice.coord_system,
             feat_slice.seq_region_name,
@@ -453,7 +465,7 @@ class SliceAdaptor():
             fend + size,
             Strand.FORWARD
         )
-    
+
     @classmethod
     def _fetch_all_toplevel_seq_regions(cls, session: Session, species_id: int = 1) -> tuple:
         stmt = (
@@ -473,7 +485,6 @@ class SliceAdaptor():
             )
         )
         return tuple(session.execute(stmt).all())
-    
 
     @classmethod
     def _fetch_all_seq_regions_by_coord_system_id(cls, session: Session, coord_system_id: int) -> tuple:
@@ -482,7 +493,8 @@ class SliceAdaptor():
                 .where(AttribTypeORM.code == 'circular_seq')
                 .subquery()
                 )
-        sr_attr_subq = aliased(SeqRegionAttribORM, subq, name="seq_region_attrib")
+        sr_attr_subq = aliased(SeqRegionAttribORM, subq,
+                               name="seq_region_attrib")
         stmt = (
             select(
                 SeqRegionORM.seq_region_id,
@@ -494,7 +506,6 @@ class SliceAdaptor():
             .where(SeqRegionORM.coord_system_id == coord_system_id)
         )
         return tuple(session.execute(stmt).all())
-
 
     @classmethod
     def _fetch_all_seq_region_ids_by_at_code(cls, session: Session, at_code: str, species_id: int = 1) -> tuple[int]:
@@ -514,15 +525,15 @@ class SliceAdaptor():
             )
         )
         return tuple(session.scalars(stmt).all())
-    
 
     @classmethod
     def _is_circular(cls, session: Session, seq_region_id: int) -> bool:
-        res = cls._fetch_seq_region_attrib(session, seq_region_id, 'circular_seq')
+        res = cls._fetch_seq_region_attrib(
+            session, seq_region_id, 'circular_seq')
         if res:
             return True
         return False
-    
+
     @classmethod
     def _is_top_level(cls, session: Session, seq_region_id: int) -> bool:
         res = cls._fetch_seq_region_attrib(session, seq_region_id, 'toplevel')
@@ -537,14 +548,13 @@ class SliceAdaptor():
     @classmethod
     def _fetch_seq_region_attrib(cls, session: Session, seq_region_id: int, seq_region_attrib_code: str) -> str:
         res = (session.query(SeqRegionAttribORM.value)
-        .join(AttribTypeORM, SeqRegionAttribORM.attrib_type_id == AttribTypeORM.attrib_type_id)
-        .where(AttribTypeORM.code == seq_region_attrib_code)
-        .where(SeqRegionAttribORM.seq_region_id == seq_region_id)
-        .first())
+               .join(AttribTypeORM, SeqRegionAttribORM.attrib_type_id == AttribTypeORM.attrib_type_id)
+               .where(AttribTypeORM.code == seq_region_attrib_code)
+               .where(SeqRegionAttribORM.seq_region_id == seq_region_id)
+               .first())
         if res:
             return res
         return ""
-    
 
     # @classmethod
     # def fetch_normalized_slice_projection(cls, session: Session, slice: Slice) -> tuple[int,int,Slice]:
@@ -552,39 +562,9 @@ class SliceAdaptor():
     #         raise ValueError(f'Need a session to a DB to work')
     #     if not slice:
     #         raise ValueError(f'Need a slice to project')
-        
+
     #     if AssemblyAdaptor.check_assembly_exceptions(session, species_id=1):
     #         raise NotImplementedError(f'Assembly exceptions found in DB {session.connection().engine.url}')
-        
+
     #     return (1, slice.length(), slice)
-        
 
-
-# import time
-# from ensembl.database.dbconnection import DBConnection
-# # from ensembl.api.core.AssemblyMapper import Gap
-# def main():
-#     dbc = DBConnection('mysql://ensro@mysql-ens-sta-1.ebi.ac.uk:4519/homo_sapiens_core_110_38')
-#     with dbc.session_scope() as session:
-#         slice_name = 'chromosome:GRCh38:13:32315086:32400268:1' # forward only
-#         slice_name = 'chromosome:GRCh38:19:2269846:2270725' # mixed strand contigs, but FWD slice
-#         slice_name = 'chromosome:GRCh38:19:11455000:11474118' # REV slice
-#         cs1 = CoordSystemAdaptor.fetch_by_name(session, 'chromosome', 'GRCh38')
-#         cs2 = CoordSystemAdaptor.fetch_by_name(session, 'contig', None)
-#         slice = SliceAdaptor.fetch_by_name(session, slice_name)
-#         proj = SliceAdaptor.project(session, slice, cs2)
-
-#         # ama = AssemblyMapperAdaptor(session, cs1, cs2)
-#         # start = time.perf_counter()
-#         # aaa = ama.fetch_assembly_mappings()
-#         # print(f'First call: {time.perf_counter()-start}')
-#         # start = time.perf_counter()
-#         # aaa = ama.fetch_assembly_mappings()
-#         # print(f'Second call: {time.perf_counter()-start}')
-
-#         # [print(f'{k}:{v}') for k,v in aaa.items()]
-
-        
-
-# if __name__ == '__main__':
-#     main()
