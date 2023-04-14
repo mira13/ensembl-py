@@ -18,12 +18,13 @@ from . import Transcript, Slice, Feature, Strand, Biotype
 
 import warnings
 
-__all__ = [ 'Gene' ]
+__all__ = ['Gene']
+
 
 class Gene(Feature):
 
     __type = 'gene'
-    
+
     def __init__(self,
                  stable_id: str,
                  version: int,
@@ -36,7 +37,7 @@ class Gene(Feature):
                  analysis: str = None,
 
                  transcripts: list[Transcript] = None,
-                 
+
                  biotype: Biotype = None,
                  source: str = 'ensembl',
                  is_current: bool = True,
@@ -48,10 +49,10 @@ class Gene(Feature):
                  description: str = None,
                  created_date: str = None,
                  modified_date: str = None,
-                 
+
                  canonical_transcript_id: int = None,
                  canonical_transcript: Transcript = None,
-                ) -> None:
+                 ) -> None:
         if not stable_id:
             raise ValueError()
         if not slice:
@@ -66,7 +67,7 @@ class Gene(Feature):
 
         self._attributes = {}
         self._transcripts = [] if not transcripts else transcripts
-        
+
         self._biotype = biotype
         self._source = source
         self._is_current = is_current
@@ -77,25 +78,24 @@ class Gene(Feature):
         self._display_xref = display_xref
         self._description = description
 
-        super().__init__(start, end, strand, slice, analysis, internal_id, created_date, modified_date)
-
+        super().__init__(start, end, strand, slice, analysis,
+                         internal_id, created_date, modified_date)
 
     def __repr__(self) -> str:
         if self._stable_id:
             return f'{self.__class__.__name__}({self.stable_id})'
         return f'{self.__class__.__name__}(internal_id{self._internal_id})'
 
-    
     @property
     def name(self) -> str:
         if self._external_name:
             return self._external_name
         return self.stable_id
-    
+
     @property
     def stable_id_version(self) -> str:
         return f"{self._stable_id}.{self._version}"
-    
+
     @property
     def stable_id(self) -> str:
         return self._stable_id
@@ -106,7 +106,7 @@ class Gene(Feature):
             (self._stable_id, self._version) = value.split('.')
         else:
             self._stable_id = value
-    
+
     @property
     def type(self) -> str:
         return self.__type
@@ -122,11 +122,11 @@ class Gene(Feature):
     @property
     def internal_id(self) -> int:
         return self._internal_id
-    
+
     @property
     def dbID(self) -> int:
         return self._internal_id
-    
+
     @property
     def biotype(self) -> Biotype:
         return self._biotype
@@ -191,18 +191,16 @@ class Gene(Feature):
     def description(self, value: str) -> None:
         self._description = value
 
-
-    
-    
     def get_transcripts(self) -> list[Transcript]:
         return self._transcripts
-    
+
     def set_transcripts(self, transcripts: list[Transcript]) -> None:
         self._transcripts = transcripts
 
     def add_transcripts(self, transcripts) -> None:
         if not transcripts:
-            warnings.warn(f"Provided transcript list is empty or None", UserWarning)
+            warnings.warn(
+                f"Provided transcript list is empty or None", UserWarning)
             return
         if isinstance(transcripts, Transcript):
             self._transcripts.append(transcripts)
@@ -216,18 +214,18 @@ class Gene(Feature):
         if att_code is None:
             return self._attributes
         return tuple(att_code, self._attributes.get(att_code))
-    
+
     def add_attrib(self, code: str, value: str):
         self._attributes[code] = value
 
-    
     def get_summary(self) -> dict:
         summary = super().get_summary()
         # update here
         return summary
-    
+
 
 # 1       ensembl_havana  gene    65419   71585   .       +       .       ID=gene:ENSG00000186092;Name=OR4F5;biotype=protein_coding;description=olfactory receptor family 4 subfamily F member 5 [Source:HGNC Symbol%3BAcc:HGNC:14825];gene_id=ENSG00000186092;logic_name=ensembl_havana_gene_homo_sapiens;version=7
+
     def gff3_qualifiers(self) -> dict[str, Union[str, tuple[str]]]:
 
         # tags = ['basic']
@@ -235,7 +233,7 @@ class Gene(Feature):
         #     tags.append('Ensembl_canonical')
         # if self.is_mane_select():
         #     tags.append('MANE_Select')
-        
+
         qualifiers = {
             'source': self._source,
             'score': ".",
@@ -249,5 +247,3 @@ class Gene(Feature):
         # qualifiers['tag'] = tuple(tags)
 
         return qualifiers
-
-    

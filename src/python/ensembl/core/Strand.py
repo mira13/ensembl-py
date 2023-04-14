@@ -14,6 +14,7 @@
 
 from enum import Enum
 
+
 class Strand(Enum):
     FORWARD = 1
     UNDEFINED = 0

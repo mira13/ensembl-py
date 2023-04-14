@@ -17,7 +17,8 @@ from .Strand import Strand
 from .Feature import Feature
 from typing import Union
 
-__all__ = [ 'Exon', 'SplicedExon' ]
+__all__ = ['Exon', 'SplicedExon']
+
 
 class Exon(Feature):
     """Representation of an exon.
@@ -40,7 +41,7 @@ class Exon(Feature):
     """
 
     __type = 'exon'
- 
+
     def __init__(self,
                  stable_id: str,
                  version: int,
@@ -54,9 +55,9 @@ class Exon(Feature):
                  analysis: str = None,
                  is_constitutive: bool = False,
                  is_current: bool = True,
-                 created_date = None,
-                 modified_date = None
-                ) -> None:
+                 created_date=None,
+                 modified_date=None
+                 ) -> None:
         if not stable_id:
             raise ValueError()
         if not Slice:
@@ -66,9 +67,11 @@ class Exon(Feature):
         if not isinstance(phase, int):
             raise ValueError('phase argument must be int')
         if phase not in (-1, 0, 1, 2):
-            raise ValueError(f'Bad value {phase} for exon phase: it must be any of (-1, 0, 1, 2)')
+            raise ValueError(
+                f'Bad value {phase} for exon phase: it must be any of (-1, 0, 1, 2)')
         if end_phase is None:
-            raise ValueError(f"No end phase set in Exon. You must set it explicitly.")
+            raise ValueError(
+                f"No end phase set in Exon. You must set it explicitly.")
         self._stable_id = stable_id
         self._version = version
         self._slice = slice
@@ -78,16 +81,17 @@ class Exon(Feature):
         self._is_current = is_current
         self._internal_id = internal_id
 
-        super().__init__(start, end, strand, slice, analysis, internal_id, created_date, modified_date)
+        super().__init__(start, end, strand, slice, analysis,
+                         internal_id, created_date, modified_date)
     # (1, 1, 76835377, 76835502, -1, -1, -1, 1, 0, 'ENSE00002089356', 1, datetime.datetime(2022, 7, 5, 10, 44, 45), datetime.datetime(2022, 7, 5, 10, 44, 45))
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.stable_id})'
-    
+
     @property
     def stable_id_version(self) -> str:
         return f"{self._stable_id}.{self._version}"
-    
+
     @property
     def stable_id(self) -> str:
         return self._stable_id
@@ -98,7 +102,7 @@ class Exon(Feature):
             (self._stable_id, self._version) = value.split('.')
         else:
             self._stable_id = value
-    
+
     @property
     def type(self) -> str:
         return self.__type
@@ -122,15 +126,15 @@ class Exon(Feature):
     @property
     def frame(self):
         if self._phase == -1:
-            return '.' # gff convention for no frame info
+            return '.'  # gff convention for no frame info
         if self._phase == 0:
-            return self._start%3
+            return self._start % 3
         if self._phase == 1:
-            return (self._start + 2)%3
+            return (self._start + 2) % 3
         if self._phase == 2:
-            return (self._start + 1)%3
+            return (self._start + 1) % 3
         raise Exception(f"bad phase in exon {self.phase}")
-    
+
     @property
     def is_constitutive(self):
         return self._is_constitutive
@@ -144,8 +148,6 @@ class Exon(Feature):
     @property
     def internal_id(self):
         return self._internal_id
-    
-
 
     def get_summary(self) -> dict[str, str]:
         """
@@ -183,44 +185,43 @@ class SplicedExon(Exon):
                  analysis: str = None,
                  is_constitutive: bool = False,
                  is_current: bool = True,
-                 transcript_source = None,
-                 created_date = None,
-                 modified_date = None
-                ) -> None:
-        
+                 transcript_source=None,
+                 created_date=None,
+                 modified_date=None
+                 ) -> None:
+
         self._index = index
         self._transcript_source = transcript_source
         super().__init__(stable_id,
-                       version,
-                       phase,
-                       end_phase,
-                       internal_id,
-                       slice,
-                       start,
-                       end,
-                       strand,
-                       analysis,
-                       is_constitutive,
-                       is_current,
-                       created_date,
-                       modified_date
-                       )
-        
+                         version,
+                         phase,
+                         end_phase,
+                         internal_id,
+                         slice,
+                         start,
+                         end,
+                         strand,
+                         analysis,
+                         is_constitutive,
+                         is_current,
+                         created_date,
+                         modified_date
+                         )
+
     def __repr__(self) -> str:
         return super().__repr__()
-    
+
     @property
     def index(self) -> int:
         return self._index
-    
+
     @property
     def source(self) -> str:
         return self._transcript_source
-    
+
     @property
     def transcript_source(self) -> str:
         return self._transcript_source
-
 
     def get_summary(self) -> dict[str, str]:
         """
@@ -232,9 +233,9 @@ class SplicedExon(Exon):
         summary = super().get_summary()
         summary['exon_index'] = self._index
         return summary
-    
-    
+
     # 1       havana  exon    65419   65433   .       +       .       Parent=transcript:ENST00000641515;Name=ENSE00003812156;constitutive=1;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSE00003812156;rank=1;version=1
+
     def gff3_qualifiers(self) -> dict[str, Union[str, tuple[str]]]:
         qualifiers = {
             'source': self.source,

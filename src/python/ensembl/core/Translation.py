@@ -17,7 +17,7 @@ from .Strand import Strand
 from typing import Union
 
 
-__all__ = [ 'Translation' ]
+__all__ = ['Translation']
 
 
 class Translation():
@@ -69,20 +69,21 @@ class Translation():
     Status     : At Risk
                 : under development
     """
+
     def __init__(self,
-        start_exon: SplicedExon,
-        end_exon: SplicedExon,
-        seq_start: int,
-        seq_end: int,
-        stable_id: str = None,
-        version: int = None,
-        internal_id: int = None,
-        seq: str = None,
-        created_date: str = None,
-        modified_date: str = None,
-        genomic_start: int = None,
-        genomic_end: int = None
-    ) -> None:
+                 start_exon: SplicedExon,
+                 end_exon: SplicedExon,
+                 seq_start: int,
+                 seq_end: int,
+                 stable_id: str = None,
+                 version: int = None,
+                 internal_id: int = None,
+                 seq: str = None,
+                 created_date: str = None,
+                 modified_date: str = None,
+                 genomic_start: int = None,
+                 genomic_end: int = None
+                 ) -> None:
         self._start_exon = start_exon
         self._end_exon = end_exon
         self._seq_start = seq_start
@@ -98,17 +99,18 @@ class Translation():
         self._attributes = {}
 
         self.__post_init__()
-        
-    
+
     def __post_init__(self):
         if self._genomic_start is None:
             if self._start_exon.strand == Strand.REVERSE:
                 self._genomic_start = self._end_exon.end - (self._seq_end - 1)
             else:
-                self._genomic_start = self._start_exon.start - (self._seq_start - 1)
+                self._genomic_start = self._start_exon.start - \
+                    (self._seq_start - 1)
         if self._genomic_end is None:
             if self._start_exon.strand == Strand.REVERSE:
-                self._genomic_end = self._start_exon.end - (self._seq_start - 1)
+                self._genomic_end = self._start_exon.end - \
+                    (self._seq_start - 1)
             else:
                 self._genomic_end = self._end_exon.start - (self._seq_end - 1)
 
@@ -118,57 +120,59 @@ class Translation():
     @property
     def start_exon(self) -> SplicedExon:
         return self._start_exon
-    
+
     @start_exon.setter
     def start_exon(self, value: SplicedExon) -> None:
         if not isinstance(value, SplicedExon):
-            raise AttributeError(f'Got to have an Exon object, not a {type(value)}')
+            raise AttributeError(
+                f'Got to have an Exon object, not a {type(value)}')
         self._start_exon = value
 
     @property
     def end_exon(self) -> SplicedExon:
         return self._end_exon
-    
+
     @end_exon.setter
     def end_exon(self, value: SplicedExon) -> None:
         if not isinstance(value, SplicedExon):
-            raise AttributeError(f'Got to have an Exon object, not a {type(value)}')
+            raise AttributeError(
+                f'Got to have an Exon object, not a {type(value)}')
         self._end_exon = value
 
     @property
     def seq_start(self) -> int:
         return self._seq_start
-    
+
     @property
     def seq_end(self) -> int:
         return self._seq_end
-    
+
     @property
     def internal_id(self) -> int:
         return self._internal_id
-    
+
     @property
     def dbID(self) -> int:
         return self._internal_id
-    
+
     @property
     def stable_id(self) -> str:
         return self._stable_id
-    
+
     @property
     def version(self) -> int:
         return self._version
-    
+
     @property
     def seq(self) -> str:
         return self._seq
-    
+
     @property
     def length(self) -> int:
         if not self.seq:
             return 0
         return len(self.seq)
-    
+
     @property
     def created_date(self) -> str:
         return self._created_date
@@ -184,7 +188,7 @@ class Translation():
     @modified_date.setter
     def modified_date(self, value: str) -> None:
         self._modified_date = value
-    
+
     def set_attribs(self, attribs: dict[str, str]) -> None:
         self._attributes = attribs
 
@@ -192,6 +196,6 @@ class Translation():
         if att_code is None:
             return self._attributes
         return tuple(att_code, self._attributes.get(att_code))
-    
+
     def add_attrib(self, code: str, value: str):
         self._attributes[code] = value

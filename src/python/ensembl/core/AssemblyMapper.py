@@ -16,13 +16,15 @@ from .Assembly import CoordSystem
 from .Slice import Slice
 from .Strand import Strand
 
-__all__ = [ 'AssemblyMapper' ]
+__all__ = ['AssemblyMapper']
+
 
 class AssemblyMapper():
 
     def __init__(self, cs_from: CoordSystem, cs_to: CoordSystem, asm_cmp_mappings: dict = None) -> None:
         if cs_from is None or not isinstance(cs_from, CoordSystem):
-            raise ValueError(f'Need an assembled coordinate system to start from')
+            raise ValueError(
+                f'Need an assembled coordinate system to start from')
         if cs_to is None or not isinstance(cs_to, CoordSystem):
             raise ValueError(f'Need a component coordinate system to go to')
 
@@ -34,10 +36,10 @@ class AssemblyMapper():
         return f'{self.__class__.__name__}({self._asm_cs}->{self._cmp_cs})'
 
     #     my @coords = $asm_mapper->map($normal_slice->seq_region_name(),
-	# 			  $normal_slice->start(),
-	# 			  $normal_slice->end(),
-	# 			  $normal_slice->strand(),
-	# 			  $slice_cs, undef, undef, 1);
+        # 			  $normal_slice->start(),
+        # 			  $normal_slice->end(),
+        # 			  $normal_slice->strand(),
+        # 			  $slice_cs, undef, undef, 1);
 
     def set_asm_cmp_mappings(self, raw_mappings) -> None:
         # DANGEROUS - can lead to inconsistencies!!!
@@ -49,12 +51,14 @@ class AssemblyMapper():
         if not isinstance(slice_from, Slice):
             raise ValueError('You must provide slices as argument')
         if slice_from.coord_system != self._asm_cs:
-            raise ValueError(f'Coordinate systems mismatch between from slice {slice_from.coord_system} and AssemblyMapper {self._asm_cs}')
+            raise ValueError(
+                f'Coordinate systems mismatch between from slice {slice_from.coord_system} and AssemblyMapper {self._asm_cs}')
         if not self._asm_cmp_mappings:
             raise Exception(f'asm_cmp_mapping cache is missing.')
-        
+
         # Select cmp slices (gaps are still implicit)
-        mapped = list(filter(lambda m: m in slice_from, self._asm_cmp_mappings.get(slice_from.seq_region_id)))
+        mapped = list(filter(lambda m: m in slice_from,
+                      self._asm_cmp_mappings.get(slice_from.seq_region_id)))
 
         # adjust first slice's start and end slice's end to fit slice_from
         start_offset = slice_from.start - mapped[0].asm_start
@@ -64,13 +68,5 @@ class AssemblyMapper():
         mapped[-1].end -= end_offset
         # mapped[0].asm_start += start_offset
         # mapped[-1].asm_end -= end_offset
-        
+
         return mapped
-
-        
-
-
-
-        
-        
-        

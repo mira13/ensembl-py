@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = [ 'Biotype' ]
+__all__ = ['Biotype']
 
 from dataclasses import dataclass, field
+
 
 @dataclass
 class Biotype():
@@ -34,6 +35,3 @@ class Biotype():
     @property
     def type(self) -> str:
         self.__type
-
-
-

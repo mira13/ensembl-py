@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ensembl.api.core.Assembly import CoordSystem
-from ensembl.api.core.Strand import Strand
+from .Assembly import CoordSystem
+from .Strand import Strand
 
 from Bio.Seq import Seq, reverse_complement
 

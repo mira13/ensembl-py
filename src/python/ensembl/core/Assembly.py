@@ -14,7 +14,8 @@
 
 from typing import Optional, Union
 
-__all__ = [ 'Assembly', 'CoordSystem' ]
+__all__ = ['Assembly', 'CoordSystem']
+
 
 class Assembly():
     def __init__(self,
@@ -32,7 +33,8 @@ class Assembly():
         self._species = species
         if is_default:
             if not (accession_id and accessioning_body and gb_last_geneset_update and assembly_date):
-                raise ValueError(f'accession_id, accessioning_body, gb_last_geneset_update, assembly_date must be specified for the default assembly')
+                raise ValueError(
+                    f'accession_id, accessioning_body, gb_last_geneset_update, assembly_date must be specified for the default assembly')
         self._accession_id = accession_id
         self._accessioning_body = accessioning_body
         self._gb_last_geneset_update = gb_last_geneset_update
@@ -46,39 +48,38 @@ class Assembly():
     @property
     def id(self) -> str:
         return self._id
-    
+
     @property
     def name(self) -> str:
         return self._name
-    
+
     @property
     def accession_id(self) -> str:
         return self._accession_id
-    
+
     @property
     def accessioning_body(self) -> str:
         return self._accessioning_body
-    
+
     @property
     def species(self) -> str:
         return self._species
-    
+
     @property
     def gb_last_geneset_update(self) -> str:
         return self._gb_last_geneset_update
-    
+
     @property
     def assembly_date(self) -> str:
         return self._assembly_date
-    
+
     @property
     def is_default(self) -> bool:
         return self._default
-    
+
     @property
     def tolid(self) -> bool:
         return self._tolid
-    
 
 
 class CoordSystem():
@@ -98,6 +99,7 @@ class CoordSystem():
     Coordinate system objects are immutable. Their name and version, and other
     attributes may not be altered after they are created.
     """
+
     def __init__(self,
                  name: str,
                  version: Optional[str] = None,
@@ -111,20 +113,25 @@ class CoordSystem():
 
         if top_level:
             if rank != 0:
-                raise ValueError(f'RANK argument must be 0 if TOP_LEVEL is True')
+                raise ValueError(
+                    f'RANK argument must be 0 if TOP_LEVEL is True')
 
             if name != 'toplevel':
-                raise ValueError(f'The NAME argument must be "toplevel" if TOP_LEVEL is True')
+                raise ValueError(
+                    f'The NAME argument must be "toplevel" if TOP_LEVEL is True')
 
             if sequence_level:
-                raise ValueError(f'SEQUENCE_LEVEL argument must be False if TOP_LEVEL is True')
+                raise ValueError(
+                    f'SEQUENCE_LEVEL argument must be False if TOP_LEVEL is True')
 
             default = False
         else:
             if rank == 0:
-                raise ValueError(f'RANK argument must be non-zero unless TOP_LEVEL is True')
+                raise ValueError(
+                    f'RANK argument must be non-zero unless TOP_LEVEL is True')
             if name == 'toplevel':
-                raise ValueError(f'The NAME argument cannot be "toplevel" if TOP_LEVEL is False')
+                raise ValueError(
+                    f'The NAME argument cannot be "toplevel" if TOP_LEVEL is False')
 
         assert isinstance(rank, int)
         if rank < 0:
@@ -138,7 +145,6 @@ class CoordSystem():
         self._default = default
         self._species_id = species_id
         self._internal_id = internal_id
-
 
     @classmethod
     def new_fast(cls, data: dict) -> None:
@@ -189,7 +195,7 @@ class CoordSystem():
     @property
     def species_id(self) -> str:
         return self._species_id
-    
+
     @property
     def internal_id(self) -> int:
         return self._internal_id
