@@ -27,7 +27,7 @@ from functools import lru_cache
 
 import warnings
 
-__all__ = [ 'CoordSystemAdaptor' ]
+__all__ = ['CoordSystemAdaptor']
 
 
 class CoordSystemAdaptor():
@@ -45,7 +45,7 @@ class CoordSystemAdaptor():
 
     _top_level = None
     _mapping_paths = {}
-    
+
     @classmethod
     def fetch_all(cls, session: Session, species_id: int = None) -> list[CoordSystem]:
         """
@@ -66,7 +66,8 @@ class CoordSystemAdaptor():
 
         if not species_id:
             rows = (
-                session.query(CoordSystemORM, MetaORM.meta_value.label('species_prod_name'))
+                session.query(CoordSystemORM, MetaORM.meta_value.label(
+                    'species_prod_name'))
                 .join(MetaORM, CoordSystemORM.species_id == MetaORM.species_id)
                 .where(MetaORM.meta_key == 'species.production_name')
                 .order_by(CoordSystemORM.species_id, CoordSystemORM.rank)
@@ -74,7 +75,8 @@ class CoordSystemAdaptor():
             )
         else:
             rows = (
-                session.query(CoordSystemORM, MetaORM.meta_value.label('species_prod_name'))
+                session.query(CoordSystemORM, MetaORM.meta_value.label(
+                    'species_prod_name'))
                 .join(MetaORM, CoordSystemORM.species_id == MetaORM.species_id)
                 .where(MetaORM.meta_key == 'species.production_name')
                 .where(CoordSystemORM.species_id == species_id)
@@ -93,14 +95,14 @@ class CoordSystemAdaptor():
                 if 'default' in row.attrib:
                     default = True
 
-            cs = CoordSystem(row.name, row.version, row.rank, toplevel, seqlevel, default, row.species_id, row.coord_system_id)
+            cs = CoordSystem(row.name, row.version, row.rank, toplevel,
+                             seqlevel, default, row.species_id, row.coord_system_id)
             cs_list.append(cs)
 
         if len(cs_list) <= 0:
             warnings.warn(f'Could not find any coordinate system', UserWarning)
-        
+
         return cs_list
-    
 
     @classmethod
     def fetch_by_rank(cls, session: Session, rank: int) -> list[CoordSystem]:
@@ -120,10 +122,11 @@ class CoordSystemAdaptor():
                    : under development
         """
         if rank < 0:
-            raise AttributeError('Rank argument must be a non-negative integer.')
-        
+            raise AttributeError(
+                'Rank argument must be a non-negative integer.')
+
         if rank == 0:
-            pass # return fetch_top_level
+            pass  # return fetch_top_level
 
         rows = (
             session.query(CoordSystemORM)
@@ -144,21 +147,23 @@ class CoordSystemAdaptor():
                 if 'default' in row.attrib:
                     default = True
 
-            cs = CoordSystem(row.name, row.version, row.rank, toplevel, seqlevel, default, row.species_id, row.coord_system_id)
+            cs = CoordSystem(row.name, row.version, row.rank, toplevel,
+                             seqlevel, default, row.species_id, row.coord_system_id)
             cs_list.append(cs)
 
         if len(cs_list) <= 0:
-            warnings.warn(f'Could not find any coordinate system with rank {rank}', UserWarning)
-        
+            warnings.warn(
+                f'Could not find any coordinate system with rank {rank}', UserWarning)
+
         return cs_list
 
     @classmethod
-    def fetch_by_name(cls, 
+    def fetch_by_name(cls,
                       session: Session,
-                      name: str, 
-                      version: Optional[str] = None, 
+                      name: str,
+                      version: Optional[str] = None,
                       species_id: int = 1
-                    ) -> CoordSystem:
+                      ) -> CoordSystem:
         """
         Arg [1]    : session: Session
                      The session object for connecting to the DB
@@ -184,34 +189,34 @@ class CoordSystemAdaptor():
         warn_str = f'Could not find any coordinate system with name {name}'
 
         if name == 'seqlevel':
-            # fetch sequence level 
+            # fetch sequence level
             return cls.fetch_sequence_level(session)
 
         if name == 'toplevel':
-            # fetch top level 
+            # fetch top level
             return cls.fetch_top_level(session)
-        
+
         if not version:
             stmt = (select(CoordSystemORM)
-                .where(
+                    .where(
                     and_(
                         func.lower(CoordSystemORM.name) == name.lower(),
                         CoordSystemORM.attrib.like(r'%default%'),
                         CoordSystemORM.species_id == species_id
                     )
-                )
-                .order_by(CoordSystemORM.species_id, CoordSystemORM.rank)
-            )
+                    )
+                    .order_by(CoordSystemORM.species_id, CoordSystemORM.rank)
+                    )
         else:
             stmt = (select(CoordSystemORM)
-            .join(MetaORM, CoordSystemORM.species_id == MetaORM.species_id)
-            .where(
+                    .join(MetaORM, CoordSystemORM.species_id == MetaORM.species_id)
+                    .where(
                 and_(
                     func.lower(CoordSystemORM.name) == name.lower(),
                     func.lower(CoordSystemORM.version) == version.lower()
                 )
             )
-            .order_by(CoordSystemORM.species_id, CoordSystemORM.rank)
+                .order_by(CoordSystemORM.species_id, CoordSystemORM.rank)
             )
             warn_str += f" and version {version}"
 
@@ -220,7 +225,7 @@ class CoordSystemAdaptor():
         if not cs_row:
             warnings.warn(warn_str, UserWarning)
             return None
-        
+
         toplevel = True if cs_row.name == 'top_level' else False
         seqlevel = False
         default = False
@@ -250,16 +255,17 @@ class CoordSystemAdaptor():
         """
         rows = (
             session.query(CoordSystemORM)
-                .where(CoordSystemORM.attrib.like(r'%sequence_level%'))
-                .all()
+            .where(CoordSystemORM.attrib.like(r'%sequence_level%'))
+            .all()
         )
 
         if not rows:
             raise Exception(f'No sequence_level coord_system is defined')
-        
+
         if len(rows) > 1:
-            raise Exception(f'Multiple sequence_level coord_systems are defined. Only one is currently supported')
-    
+            raise Exception(
+                f'Multiple sequence_level coord_systems are defined. Only one is currently supported')
+
         toplevel = True if rows[0].name == 'top_level' else False
         seqlevel = False
         default = False
@@ -270,7 +276,6 @@ class CoordSystemAdaptor():
                 default = True
 
         return CoordSystem(rows[0].name, rows[0].version, rows[0].rank, toplevel, seqlevel, default, rows[0].species_id, rows[0].coord_system_id)
-        
 
     @classmethod
     def fetch_by_dbID(cls, session: Session, dbID: int) -> CoordSystem:
@@ -287,12 +292,13 @@ class CoordSystemAdaptor():
         Status     : At Risk
                    : under development
         """
-        stmt = select(CoordSystemORM).where(CoordSystemORM.coord_system_id == dbID)
+        stmt = select(CoordSystemORM).where(
+            CoordSystemORM.coord_system_id == dbID)
         cs_row = session.scalars(stmt).first()
 
         if not cs_row:
             return None
-    
+
         toplevel = True if cs_row.name == 'top_level' else False
         seqlevel = False
         default = False
@@ -303,7 +309,6 @@ class CoordSystemAdaptor():
                 default = True
 
         return CoordSystem(cs_row.name, cs_row.version, cs_row.rank, toplevel, seqlevel, default, cs_row.species_id, cs_row.coord_system_id)
-
 
     @classmethod
     def fetch_default_version(cls, session: Session) -> str:
@@ -320,23 +325,21 @@ class CoordSystemAdaptor():
         """
         row = (
             session.query(CoordSystemORM.version.distinct())
-                .where(
-                    and_(
-                        CoordSystemORM.attrib.like(r'%default_version%'),
-                        CoordSystemORM.version != None
-                    )
+            .where(
+                and_(
+                    CoordSystemORM.attrib.like(r'%default_version%'),
+                    CoordSystemORM.version != None
                 )
-                .first()
+            )
+            .first()
         )
         if not row:
             raise Exception(f'No default_version coord_system is defined')
         return row[0]
-        
-    
+
     @classmethod
     def fetch_top_level(cls, session: Session) -> str:
         raise Exception('Not implemented')
-    
 
     @classmethod
     def get_default_version(cls, session: Session) -> str:
@@ -348,7 +351,6 @@ class CoordSystemAdaptor():
         Exceptions : throw if no default version is defined
         """
         return cls.fetch_default_version(session)
-    
 
     @classmethod
     def fetch_all_default(cls, session: Session, species_id: int = 1) -> list[CoordSystem]:
@@ -367,24 +369,24 @@ class CoordSystemAdaptor():
         """
         rows = (
             session.query(CoordSystemORM)
-                .where(CoordSystemORM.attrib.like(r'%default%'))
-                .order_by(CoordSystemORM.rank)
-                .all()
+            .where(CoordSystemORM.attrib.like(r'%default%'))
+            .order_by(CoordSystemORM.rank)
+            .all()
         )
 
         if not rows:
             raise Exception(f'No default coord_system is defined')
-        
+
         cs_list = []
         for cs_row in rows:
             toplevel = False
             seqlevel = True if cs_row.attrib and 'sequence_level' in cs_row.attrib else False
             default = True
-            cs = CoordSystem(cs_row.name, cs_row.version, cs_row.rank, toplevel, seqlevel, default, cs_row.species_id, cs_row.coord_system_id)
+            cs = CoordSystem(cs_row.name, cs_row.version, cs_row.rank, toplevel,
+                             seqlevel, default, cs_row.species_id, cs_row.coord_system_id)
             cs_list.append(cs)
 
         return cs_list
-    
 
     @classmethod
     def fetch_all_nondefault(cls, session: Session, species_id: int = 1) -> list[CoordSystem]:
@@ -403,47 +405,51 @@ class CoordSystemAdaptor():
         """
         rows = (
             session.query(CoordSystemORM)
-                .where(CoordSystemORM.attrib.not_like(r'%default%'))
-                .order_by(CoordSystemORM.rank)
-                .all()
+            .where(CoordSystemORM.attrib.not_like(r'%default%'))
+            .order_by(CoordSystemORM.rank)
+            .all()
         )
 
         if not rows:
             raise Exception(f'No non-default coord_system is defined')
-        
+
         cs_list = []
         for cs_row in rows:
             toplevel = False
             seqlevel = True if cs_row.attrib and 'sequence_level' in cs_row.attrib else False
             default = False
-            cs = CoordSystem(cs_row.name, cs_row.version, cs_row.rank, toplevel, seqlevel, default, cs_row.species_id, cs_row.coord_system_id)
+            cs = CoordSystem(cs_row.name, cs_row.version, cs_row.rank, toplevel,
+                             seqlevel, default, cs_row.species_id, cs_row.coord_system_id)
             cs_list.append(cs)
 
         return cs_list
-    
 
     @classmethod
     def _cache_mapping_paths(cls, session: Session) -> None:
         mapping_paths = {}
 
-        meta_maps = MetaAdaptor.fetch_meta_value_by_key(session, 'assembly.mapping')
+        meta_maps = MetaAdaptor.fetch_meta_value_by_key(
+            session, 'assembly.mapping')
         for map_path in meta_maps:
             cs_strings = re.split(r'[|#]', map_path)
             if len(cs_strings) < 2:
-                warnings.warn(f'Incorrectly formatted assembly.mapping value in meta table: {map_path}', UserWarning)
+                warnings.warn(
+                    f'Incorrectly formatted assembly.mapping value in meta table: {map_path}', UserWarning)
                 continue
-            
+
             def _inner_fetch_cs(cs_strings):
                 cs_list = []
                 for cs_str in cs_strings:
-                    (cs_name, _,cs_version) = cs_str.partition(':')
-                    cs = CoordSystemAdaptor.fetch_by_name(session, cs_name, cs_version)
+                    (cs_name, _, cs_version) = cs_str.partition(':')
+                    cs = CoordSystemAdaptor.fetch_by_name(
+                        session, cs_name, cs_version)
                     if not cs:
-                        warnings.warn(f'Unknown coordinate system specified in meta table: {cs_str}', UserWarning)
+                        warnings.warn(
+                            f'Unknown coordinate system specified in meta table: {cs_str}', UserWarning)
                         return None
                     cs_list.append(cs)
                 return cs_list
-            
+
             coord_systems = _inner_fetch_cs(cs_strings)
             if coord_systems is None:
                 continue
@@ -476,17 +482,17 @@ class CoordSystemAdaptor():
 
         # Create the pseudo coord system 'toplevel' and cache it so that only
         # one of these is created for each database.
-        cls._top_level = CoordSystem('toplevel', top_level=True) 
-        cls._mapping_paths = mapping_paths # set/cache mapping paths from DB
-
+        cls._top_level = CoordSystem('toplevel', top_level=True)
+        cls._mapping_paths = mapping_paths  # set/cache mapping paths from DB
 
     @classmethod
     def get_mapping_path(cls, session: Session, cs1: CoordSystem, cs2: CoordSystem) -> tuple[CoordSystem]:
         if not session:
             raise ValueError(f'Must have a session to connect to a DB to')
         if not cs1 or not cs2:
-            raise ValueError(f'Two ensembl.api.core.CoordSystem arguments expected.')
-        
+            raise ValueError(
+                f'Two ensembl.api.core.CoordSystem arguments expected.')
+
         if not cls._mapping_paths:
             cls._cache_mapping_paths(session)
 
@@ -496,11 +502,11 @@ class CoordSystemAdaptor():
         path = cls._mapping_paths.get(f'{key1}|{key2}')
         if path:
             return path
-        
+
         path = cls._mapping_paths.get(f'{key2}|{key1}')
         if path:
             return path
-        
+
         # No path was explicitly defined, but we might be able to guess a
         # suitable path.  We only guess for missing 2 step paths.
         mid1 = {}
@@ -514,7 +520,7 @@ class CoordSystemAdaptor():
                 match = 1
             elif p[1] == cs1:
                 match = 0
-                
+
             if match is not None:
                 mid = p[match]
                 midkey = f'{mid.name}:{mid.version}' if mid.version else mid.name
@@ -529,7 +535,7 @@ class CoordSystemAdaptor():
                     return pp
                 else:
                     mid1[midkey] = mid
-            
+
             match = None
             if p[0] == cs2:
                 match = 1

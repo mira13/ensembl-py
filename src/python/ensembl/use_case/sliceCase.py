@@ -7,7 +7,8 @@ with dbc.session_scope() as session:
     slice_name = 'chromosome:GRCh38:13:32315086:32400268:1' # forward only
     slice_name = 'chromosome:GRCh38:19:2269846:2270725' # mixed strand contigs, but FWD slice
     slice_name = 'chromosome:GRCh38:19:11455000:11474118' # REV slice
-#         cs1 = CoordSystemAdaptor.fetch_by_name(session, 'chromosome', 'GRCh38')
+    cs1 = CoordSystemAdaptor.fetch_by_name(session, 'chromosome', 'GRCh38')
+    print (cs1)
 #         cs2 = CoordSystemAdaptor.fetch_by_name(session, 'contig', None)
 #         slice = SliceAdaptor.fetch_by_name(session, slice_name)
 #         proj = SliceAdaptor.project(session, slice, cs2)
