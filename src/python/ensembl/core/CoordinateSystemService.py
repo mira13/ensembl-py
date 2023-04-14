@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from sqlalchemy.orm import Session
+from ensembl.data.ensembl.CoordSystemStorage
 
 __all__ = ['CoordinateSystem']
 
@@ -21,7 +22,7 @@ class CoordinateSystem:
     """Representation of coordinate system logic.
     New species tend to have only one coordinate system - assembly (top level).
     For multi-coordinate-system species level is defined by rank.
-    Note that many coordinate systems do not have a concept of a version
+    Note that many coordinate systems do a concept of a version
     for the entire coordinate system (though they may have a per-sequence
     version).  The 'chromosome' coordinate system usually has a version
     (i.e. the assembly version) but the clonal coordinate system does not
@@ -30,7 +31,7 @@ class CoordinateSystem:
     instead.
     Attributes:
         cache: define cache size, by default is 0
-        session: keeps connection session_scope
+        source: keeps data source instance, used to retrive and store data
     Raises:
         Expection: when mapping to another level failed
     """
@@ -43,26 +44,23 @@ class CoordinateSystem:
         if not session: 
             raise ValueError('Connection session is required, create it with
                              DBConnection')
-        self._session = session
+        self._source = CoordSystemStorage(session)
 
     @classmethod
     def get_by_name(cls,
-                      session: Session,
                       name: str,
                       version: Optional[str] = None,
                       species_id: int = 1
                       ) -> CoordSystem:
         """
-        Arg [1]     : session: Session
-                      The session object for connecting to the DB
-        Arg [2]    : str name
+        Arg [1]    : str name
                      The name of the coordinate system to retrieve.  Alternatively
                      this may be an alias for a real coordinate system.  Valid
                      aliases are 'toplevel' and 'seqlevel'.
-        Arg [3]    : str version
+        Arg [2]    : str version
                      The version of the coordinate system to retrieve.  If not
                      specified the default version will be used.
-        Arg [4]    : int species_id (default: 1)
+        Arg [3]    : int species_id (default: 1)
                      The species_id the coordinate system refers to.
                      If not specified the default value 1 will be used.
         Example    : cs_list = CoordSystemAdaptor.fetch_by_name('contig')
@@ -78,7 +76,7 @@ class CoordinateSystem:
 
         if name == 'seqlevel':
             # fetch sequence level
-            return cls.fetch_sequence_level(session)
+            return cls.fetch_sequence_level(_session)
 
         if name == 'toplevel':
             # fetch top level

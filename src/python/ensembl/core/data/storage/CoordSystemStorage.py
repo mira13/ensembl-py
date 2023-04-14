@@ -20,17 +20,17 @@ from ensembl.core.models import CoordSystem as CoordSystemORM, Meta as MetaORM
 from typing import Optional
 import re
 
-from ensembl.api.core.Assembly import CoordSystem
-from ensembl.api.dbsql.MetaAdaptor import MetaAdaptor
+from ensembl.data.model.Assembly import CoordSystem
+from ensembl.core.Meta import MetaAdaptor
 
 from functools import lru_cache
 
 import warnings
 
-__all__ = ['CoordSystemAdaptor']
+__all__ = ['CoordSystemStorage']
 
 
-class CoordSystemAdaptor():
+class CoordSystemStorage():
     """Contains all the coordinate system related functions over CoordSystem ORM
     This adaptor allows the querying of information on the coordinate
     system.
