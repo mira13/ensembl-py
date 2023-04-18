@@ -52,9 +52,11 @@ class DBConnection:
         url: URL to the database, e.g. ``mysql://user:passwd@host:port/my_db``.
 
     """
+
     def __init__(self, url: URL) -> None:
-        self._engine = create_engine(url)
+        self._engine = create_engine(url, echo=True)
         self.load_metadata()
+
 
     def __repr__(self) -> str:
         """Returns a string representation of this object."""
@@ -121,7 +123,8 @@ class DBConnection:
 
         """
         result = self.execute(
-            select([self.tables['meta'].columns.meta_value]).where(text('meta_key = "schema_type"'))
+            select([self.tables['meta'].columns.meta_value]).where(
+                text('meta_key = "schema_type"'))
         )
         return result.one()[0]
 
@@ -136,7 +139,8 @@ class DBConnection:
 
         """
         result = self.execute(
-            select([self.tables['meta'].columns.meta_value]).where(text('meta_key = "schema_version"'))
+            select([self.tables['meta'].columns.meta_value]).where(
+                text('meta_key = "schema_version"'))
         )
         return int(result.one()[0])
 
@@ -205,6 +209,7 @@ class DBConnection:
         # If the database supports SAVEPOINT, starting a savepoint will allow to also use rollback
         connection.begin_nested()
         # Define a new transaction event
+
         @event.listens_for(session, "after_transaction_end")
         def end_savepoint(session, transaction):  # pylint: disable=unused-variable
             if not connection.in_nested_transaction():

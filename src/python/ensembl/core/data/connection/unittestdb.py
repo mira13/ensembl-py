@@ -67,7 +67,8 @@ class UnitTestDB:
     def __init__(self, url: URL, dump_dir: Union[str, os.PathLike], name: str = None) -> None:
         db_url = make_url(url)
         dump_dir_path = Path(dump_dir)
-        db_name = os.environ['USER'] + '_' + (name if name else dump_dir_path.name)
+        db_name = os.environ['USER'] + '_' + \
+            (name if name else dump_dir_path.name)
         # Add the database name to the URL
         db_url = db_url.set(database=db_name)
         # SQLite databases are created automatically if they do not exist
@@ -75,7 +76,8 @@ class UnitTestDB:
             # Connect to the server to create the database
             if not database_exists(db_url):
                 self._server = create_engine(url)
-                self._server.execute(text(f"CREATE DATABASE {db_url.database};"))
+                self._server.execute(
+                    text(f"CREATE DATABASE {db_url.database};"))
         try:
             # Establish the connection to the database, load the schema and import the data
             self.dbc = DBConnection(db_url)
@@ -109,11 +111,12 @@ class UnitTestDB:
         elif self.dbc.dialect == 'oracle':
             self._server.execute(text(f"DROP DATABASE {self.dbc.db_name};"))
         else:
-            self._server.execute(text(f"DROP DATABASE IF EXISTS {self.dbc.db_name};"))
+            self._server.execute(
+                text(f"DROP DATABASE IF EXISTS {self.dbc.db_name};"))
         self.dbc.dispose()
 
     def _load_data(self, conn: sqlalchemy.engine.Connection, table: str, filepath: Union[str, os.PathLike]
-                  ) -> None:
+                   ) -> None:
         """Loads the table data from the given file.
 
         Args:
@@ -129,21 +132,24 @@ class UnitTestDB:
             # SQLite does not have an equivalent to "LOAD DATA": use its '.import' command instead
             try:
                 subprocess.run(
-                    ['sqlite3', self.dbc.db_name, ".mode tabs", f".import {filepath} {table}"],
+                    ['sqlite3', self.dbc.db_name, ".mode tabs",
+                        f".import {filepath} {table}"],
                     check=True
                 )
             except subprocess.CalledProcessError:
-                raise DataLoadingError(f"SQLite3 import of '{filepath}' failed") from None
+                raise DataLoadingError(
+                    f"SQLite3 import of '{filepath}' failed") from None
         elif self.dbc.dialect == 'postgresql':
             conn.execute(text(f"COPY {table} FROM '{filepath}'"))
         elif self.dbc.dialect == 'sqlserver':
             conn.execute(text(f"BULK INSERT {table} FROM '{filepath}'"))
         else:
-            conn.execute(text(f"LOAD DATA LOCAL INFILE '{filepath}' INTO TABLE {table}"))
+            conn.execute(
+                text(f"LOAD DATA LOCAL INFILE '{filepath}' INTO TABLE {table}"))
 
     @staticmethod
     def _parse_sql_file(filepath: Union[str, bytes, os.PathLike]
-                       ) -> Iterator[sqlalchemy.sql.expression.TextClause]:
+                        ) -> Iterator[sqlalchemy.sql.expression.TextClause]:
         """Yields each SQL query found parsing the given SQL file.
 
         Args:

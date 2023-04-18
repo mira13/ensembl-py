@@ -15,10 +15,12 @@
 from sqlalchemy.orm import Session
 from ensembl.data.ensembl.CoordSystemStorage
 
-__all__ = ['CoordinateSystem']
+from functools import lru_cache
+
+__all__ = ['CoordSystemService']
 
 
-class CoordinateSystem:
+class CoordSystemService:
     """Representation of coordinate system logic.
     New species tend to have only one coordinate system - assembly (top level).
     For multi-coordinate-system species level is defined by rank.
@@ -30,28 +32,29 @@ class CoordinateSystem:
     coordinate system does not have a version an empty string ('') is used
     instead.
     Attributes:
-        cache: define cache size, by default is 0
-        source: keeps data source instance, used to retrive and store data
+        __data_source: keeps data source instance, used to retrive and store data
     Raises:
         Expection: when mapping to another level failed
     """
 
-    __type = 'coordinate_system'
+    __type = 'coord_system_service'
+    _mapping_paths = {}
+    _top_level = None
 
     def __init__(self,
                  session: Session = None
-                )->None:
-        if not session: 
+                 ) -> None:
+        if not session:
             raise ValueError('Connection session is required, create it with
                              DBConnection')
-        self._source = CoordSystemStorage(session)
+        self.__data_source = CoordSystemStorage(session)
 
     @classmethod
     def get_by_name(cls,
-                      name: str,
-                      version: Optional[str] = None,
-                      species_id: int = 1
-                      ) -> CoordSystem:
+                    name: str,
+                    version: Optional[str] = None,
+                    species_id: int = 1
+                    ) -> CoordSystem:
         """
         Arg [1]    : str name
                      The name of the coordinate system to retrieve.  Alternatively

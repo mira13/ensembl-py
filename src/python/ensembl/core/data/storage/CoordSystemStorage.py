@@ -18,10 +18,8 @@ from sqlalchemy.orm import Session
 from ensembl.core.models import CoordSystem as CoordSystemORM, Meta as MetaORM
 
 from typing import Optional
-import re
 
 from ensembl.data.model.Assembly import CoordSystem
-from ensembl.core.Meta import MetaAdaptor
 
 from functools import lru_cache
 
@@ -32,8 +30,8 @@ __all__ = ['CoordSystemStorage']
 
 class CoordSystemStorage():
     """Contains all the coordinate system related functions over CoordSystem ORM
-    This adaptor allows the querying of information on the coordinate
-    system.
+    This storage allows the querying of information on the coordinate
+    system table.
     Note that many coordinate systems do not have a concept of a version
     for the entire coordinate system (though they may have a per-sequence
     version).  The 'chromosome' coordinate system usually has a version
@@ -43,13 +41,19 @@ class CoordSystemStorage():
     instead.
     """
 
-    _top_level = None
-    _mapping_paths = {}
+    def __init__(self,
+                 session: Session = None
+                ) -> None:
+   if not session:
+            raise ValueError('Connection session is required for storage
+                             initilisation')
+        self.__data_source = session
 
     @classmethod
-    def fetch_all(cls, session: Session, species_id: int = None) -> list[CoordSystem]:
+    def fetch_all(cls, species_id: int = None) -> list[CoordSystem]:
         """
-        Arg [1]    : session: Session
+        Arg [1]    : species_id: optional value, specifies particular species,
+        usually one data_source has only one species.
                      The session object for connecting to the DB
         Example    : for cs in CoordSystemAdaptor.fetch_all(dbconnection):
                      print(f"{cs.name} {cs.version}";
@@ -66,7 +70,7 @@ class CoordSystemStorage():
 
         if not species_id:
             rows = (
-                session.query(CoordSystemORM, MetaORM.meta_value.label(
+                self.__data_source.query(CoordSystemORM, MetaORM.meta_value.label(
                     'species_prod_name'))
                 .join(MetaORM, CoordSystemORM.species_id == MetaORM.species_id)
                 .where(MetaORM.meta_key == 'species.production_name')
@@ -74,8 +78,8 @@ class CoordSystemStorage():
                 .all()
             )
         else:
-            rows = (
-                session.query(CoordSystemORM, MetaORM.meta_value.label(
+            rows = (i
+                self.__data_source.query(CoordSystemORM, MetaORM.meta_value.label(
                     'species_prod_name'))
                 .join(MetaORM, CoordSystemORM.species_id == MetaORM.species_id)
                 .where(MetaORM.meta_key == 'species.production_name')
@@ -104,6 +108,7 @@ class CoordSystemStorage():
 
         return cs_list
 
+    """TODO: reafctor, extract logic"""
     @classmethod
     def fetch_by_rank(cls, session: Session, rank: int) -> list[CoordSystem]:
         """
@@ -157,6 +162,7 @@ class CoordSystemStorage():
 
         return cs_list
 
+    """TODO: reafctor, extract logic"""
     @classmethod
     def fetch_by_name(cls,
                       session: Session,
@@ -237,8 +243,9 @@ class CoordSystemStorage():
 
         return CoordSystem(cs_row.name, cs_row.version, cs_row.rank, toplevel, seqlevel, default, cs_row.species_id, cs_row.coord_system_id)
 
+    """TODO: reafctor, extract logic"""
     @classmethod
-    @lru_cache(maxsize=2)
+    @(maxsize=2)
     def fetch_sequence_level(cls, session: Session) -> CoordSystem:
         """
         Arg [1]    : session: Session
@@ -277,6 +284,7 @@ class CoordSystemStorage():
 
         return CoordSystem(rows[0].name, rows[0].version, rows[0].rank, toplevel, seqlevel, default, rows[0].species_id, rows[0].coord_system_id)
 
+    """TODO: reafctor, extract logic"""
     @classmethod
     def fetch_by_dbID(cls, session: Session, dbID: int) -> CoordSystem:
         """
@@ -310,6 +318,7 @@ class CoordSystemStorage():
 
         return CoordSystem(cs_row.name, cs_row.version, cs_row.rank, toplevel, seqlevel, default, cs_row.species_id, cs_row.coord_system_id)
 
+    """TODO: reafctor, extract logic"""
     @classmethod
     def fetch_default_version(cls, session: Session) -> str:
         """
@@ -337,10 +346,12 @@ class CoordSystemStorage():
             raise Exception(f'No default_version coord_system is defined')
         return row[0]
 
+    """TODO: reafctor, extract logic"""
     @classmethod
     def fetch_top_level(cls, session: Session) -> str:
         raise Exception('Not implemented')
 
+    """TODO: reafctor, extract logic"""
     @classmethod
     def get_default_version(cls, session: Session) -> str:
         """
@@ -352,6 +363,7 @@ class CoordSystemStorage():
         """
         return cls.fetch_default_version(session)
 
+    """TODO: reafctor, extract logic"""
     @classmethod
     def fetch_all_default(cls, session: Session, species_id: int = 1) -> list[CoordSystem]:
         """
@@ -388,6 +400,7 @@ class CoordSystemStorage():
 
         return cs_list
 
+    """TODO: reafctor, extract logic"""
     @classmethod
     def fetch_all_nondefault(cls, session: Session, species_id: int = 1) -> list[CoordSystem]:
         """
@@ -424,6 +437,7 @@ class CoordSystemStorage():
 
         return cs_list
 
+    """TODO: reafctor, extract logic"""
     @classmethod
     def _cache_mapping_paths(cls, session: Session) -> None:
         mapping_paths = {}
@@ -485,6 +499,7 @@ class CoordSystemStorage():
         cls._top_level = CoordSystem('toplevel', top_level=True)
         cls._mapping_paths = mapping_paths  # set/cache mapping paths from DB
 
+    """TODO: reafctor, extract logic"""
     @classmethod
     def get_mapping_path(cls, session: Session, cs1: CoordSystem, cs2: CoordSystem) -> tuple[CoordSystem]:
         if not session:
