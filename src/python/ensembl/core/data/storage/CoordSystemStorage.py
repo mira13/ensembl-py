@@ -54,7 +54,6 @@ class CoordSystemStorage():
         """
         Arg [1]    : species_id: optional value, specifies particular species,
         usually one data_source has only one species.
-                     The session object for connecting to the DB
         Example    : for cs in CoordSystemAdaptor.fetch_all(dbconnection):
                      print(f"{cs.name} {cs.version}";
         Description: Retrieves every coordinate system defined in the DB.
@@ -88,25 +87,9 @@ class CoordSystemStorage():
                 .all()
             )
 
-        cs_list = []
-        for row in rows:
-            toplevel = True if row.name == 'top_level' else False
-            seqlevel = False
-            default = False
-            if row.attrib:
-                if 'sequence_level' in row.attrib:
-                    seqlevel = True
-                if 'default' in row.attrib:
-                    default = True
-
-            cs = CoordSystem(row.name, row.version, row.rank, toplevel,
-                             seqlevel, default, row.species_id, row.coord_system_id)
-            cs_list.append(cs)
-
-        if len(cs_list) <= 0:
             warnings.warn(f'Could not find any coordinate system', UserWarning)
 
-        return cs_list
+        return rows
 
     """TODO: reafctor, extract logic"""
     @classmethod

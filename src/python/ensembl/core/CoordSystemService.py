@@ -35,6 +35,7 @@ class CoordSystemService:
         __data_source: keeps data source instance, used to retrive and store data
     Raises:
         Expection: when mapping to another level failed
+        Status: to be tested
     """
 
     __type = 'coord_system_service'
@@ -48,6 +49,29 @@ class CoordSystemService:
             raise ValueError('Connection session is required, create it with
                              DBConnection')
         self.__data_source = CoordSystemStorage(session)
+
+    @classmethod
+    @lru_cache(maxsize=2)
+    def get_all(cls, species_id: int = None) -> list[CoordSystem]:
+        """
+        Arg [1]    : int species_id
+                     Optional argument to specify species in multi-species db
+        """
+        cs_raw_list = self.__data_source.fetch_all
+        result_list = []
+        top_level = True
+        _top_level = cs_raw_list[0]
+        for cs_raw in cs_raw_list:
+           seqlevel = "sequence_level" in cs_raw.attrib
+           default =  "default" in cs_raw.attrib
+
+           cs = CoordSystem(cs_raw.name, cs_raw.version, cs_raw.rank, toplevel,
+                           seqlevel, default, cs_raw.species_id,
+                            cs_raw.coord_system_id)
+           result_list.append(cs)
+           top_level = False
+
+        return result_list
 
     @classmethod
     def get_by_name(cls,
