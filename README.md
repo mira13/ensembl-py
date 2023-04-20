@@ -40,6 +40,12 @@ Achieve an understanding of
 
 ## Approach (first steps so far)
 
+Services (i.e. coord_system_Service) provide logic level of api, and uses user
+models as output. On init service creates storage inctance to fetch and retrive
+data, using database details. Each first-level service operates with one
+species at time, higher lever services can combine low-level functionality to
+perform multi-species logic
+
 ### Unfruitful starting points so far
 
 Started initially from `ensembl-io` with the idea to port/re-implement simple I/O features.
