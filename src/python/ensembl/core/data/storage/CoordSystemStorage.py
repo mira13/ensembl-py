@@ -15,11 +15,11 @@
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import Session
 
-from ensembl.core.models import CoordSystem as CoordSystemORM, Meta as MetaORM
+from ensembl.core.data.model import CoordSystem as CoordSystemORM, Meta as MetaORM
 
 from typing import Optional
 
-from ensembl.data.model.Assembly import CoordSystem
+from ensembl.ui_model.Assembly import CoordSystem
 
 from functools import lru_cache
 
@@ -43,16 +43,15 @@ class CoordSystemStorage():
 
     def __init__(self,
                  session: Session = None
-                ) -> None:
-   if not session:
-            raise ValueError('Connection session is required for storage
-                             initilisation')
+                 ) -> None:
+        if not session:
+            raise ValueError(
+                'Connection session is required for storage initilisation')
         self.__data_source = session
 
-    @classmethod
-    def fetch_all(cls, species_id: int = None) -> list[CoordSystem]:
+    def fetch_all(self, species_id: int = 1) -> list[CoordSystem]:
         """
-        Arg [1]    : species_id: optional value, specifies particular species,
+        Arg [1]    : species_id: specifies particular species,
         usually one data_source has only one species.
         Example    : for cs in CoordSystemAdaptor.fetch_all(dbconnection):
                      print(f"{cs.name} {cs.version}";
@@ -61,32 +60,19 @@ class CoordSystemStorage():
                      The coordinate system with lower rank would be first in the
                      array.
         Returntype : List[ensembl.dbsql.CoordSystem]
-        Exceptions : ensembl.api.dbsql.DBAdaptor.ArgumentError
-        Caller     : general
+        Caller     : CoordSystemService
         Status     : At Risk
                    : under development
         """
 
-        if not species_id:
-            rows = (
-                self.__data_source.query(CoordSystemORM, MetaORM.meta_value.label(
-                    'species_prod_name'))
-                .join(MetaORM, CoordSystemORM.species_id == MetaORM.species_id)
-                .where(MetaORM.meta_key == 'species.production_name')
-                .order_by(CoordSystemORM.species_id, CoordSystemORM.rank)
-                .all()
-            )
-        else:
-            rows = (i
-                self.__data_source.query(CoordSystemORM, MetaORM.meta_value.label(
-                    'species_prod_name'))
+        rows = (self.__data_source.query(CoordSystemORM)
                 .join(MetaORM, CoordSystemORM.species_id == MetaORM.species_id)
                 .where(MetaORM.meta_key == 'species.production_name')
                 .where(CoordSystemORM.species_id == species_id)
                 .order_by(CoordSystemORM.rank)
                 .all()
-            )
-
+                )
+        if (rows.count == 0):
             warnings.warn(f'Could not find any coordinate system', UserWarning)
 
         return rows
@@ -228,7 +214,6 @@ class CoordSystemStorage():
 
     """TODO: reafctor, extract logic"""
     @classmethod
-    @(maxsize=2)
     def fetch_sequence_level(cls, session: Session) -> CoordSystem:
         """
         Arg [1]    : session: Session

@@ -110,7 +110,7 @@ class CoordSystem():
                  species_id: Union[str, int] = None,
                  internal_id: int = None
                  ) -> None:
-
+        """
         if top_level:
             if rank != 0:
                 raise ValueError(
@@ -125,6 +125,7 @@ class CoordSystem():
                     f'SEQUENCE_LEVEL argument must be False if TOP_LEVEL is True')
 
             default = False
+        
         else:
             if rank == 0:
                 raise ValueError(
@@ -132,7 +133,7 @@ class CoordSystem():
             if name == 'toplevel':
                 raise ValueError(
                     f'The NAME argument cannot be "toplevel" if TOP_LEVEL is False')
-
+        """
         assert isinstance(rank, int)
         if rank < 0:
             raise ValueError(f'Rank must be non-negative integer number')

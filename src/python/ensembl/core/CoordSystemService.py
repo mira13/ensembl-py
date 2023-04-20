@@ -13,9 +13,11 @@
 # limitations under the License.
 
 from sqlalchemy.orm import Session
-from ensembl.data.ensembl.CoordSystemStorage
+from ensembl.core.data.storage.CoordSystemStorage import CoordSystemStorage
 
 from functools import lru_cache
+from ensembl.ui_model.Assembly import CoordSystem
+from typing import Optional
 
 __all__ = ['CoordSystemService']
 
@@ -41,43 +43,43 @@ class CoordSystemService:
     __type = 'coord_system_service'
     _mapping_paths = {}
     _top_level = None
+    _seq_level = None
+    _species_id = 1
 
     def __init__(self,
-                 session: Session = None
+                 session: Session = None,
+                 species_id: int = 1
                  ) -> None:
         if not session:
-            raise ValueError('Connection session is required, create it with
-                             DBConnection')
+            raise ValueError(
+                'Connection session is required, create it with DBConnection')
         self.__data_source = CoordSystemStorage(session)
+        self._species_id = species_id
+        self.get_all()
 
-    @classmethod
     @lru_cache(maxsize=2)
-    def get_all(cls, species_id: int = None) -> list[CoordSystem]:
-        """
-        Arg [1]    : int species_id
-                     Optional argument to specify species in multi-species db
-        """
-        cs_raw_list = self.__data_source.fetch_all
+    def get_all(self) -> list[CoordSystem]:
+        cs_raw_list = self.__data_source.fetch_all(self._species_id)
         result_list = []
         top_level = True
         _top_level = cs_raw_list[0]
         for cs_raw in cs_raw_list:
-           seqlevel = "sequence_level" in cs_raw.attrib
-           default =  "default" in cs_raw.attrib
-
-           cs = CoordSystem(cs_raw.name, cs_raw.version, cs_raw.rank, toplevel,
-                           seqlevel, default, cs_raw.species_id,
-                            cs_raw.coord_system_id)
-           result_list.append(cs)
-           top_level = False
+            if(cs_raw.attrib != None):
+                seqlevel = (cs_raw.attrib.find("sequence_level") > 0)
+                default = (cs_raw.attrib.find("default") > 0)
+            cs = CoordSystem(cs_raw.name, cs_raw.version, cs_raw.rank, top_level,
+                             seqlevel, default, cs_raw.species_id,
+                             cs_raw.coord_system_id)
+            if(seqlevel):
+                _seq_level = cs
+            result_list.append(cs)
+            top_level = False
 
         return result_list
 
-    @classmethod
-    def get_by_name(cls,
+    def get_by_name(self,
                     name: str,
                     version: Optional[str] = None,
-                    species_id: int = 1
                     ) -> CoordSystem:
         """
         Arg [1]    : str name
@@ -102,50 +104,7 @@ class CoordSystemService:
         warn_str = f'Could not find any coordinate system with name {name}'
 
         if name == 'seqlevel':
-            # fetch sequence level
-            return cls.fetch_sequence_level(_session)
+            return self._seq_level
 
         if name == 'toplevel':
-            # fetch top level
-            return cls.fetch_top_level(session)
-
-        if not version:
-            stmt = (select(CoordSystemORM)
-                    .where(
-                    and_(
-                        func.lower(CoordSystemORM.name) == name.lower(),
-                        CoordSystemORM.attrib.like(r'%default%'),
-                        CoordSystemORM.species_id == species_id
-                    )
-                    )
-                    .order_by(CoordSystemORM.species_id, CoordSystemORM.rank)
-                    )
-        else:
-            stmt = (select(CoordSystemORM)
-                    .join(MetaORM, CoordSystemORM.species_id == MetaORM.species_id)
-                    .where(
-                and_(
-                    func.lower(CoordSystemORM.name) == name.lower(),
-                    func.lower(CoordSystemORM.version) == version.lower()
-                )
-            )
-                .order_by(CoordSystemORM.species_id, CoordSystemORM.rank)
-            )
-            warn_str += f" and version {version}"
-
-        cs_row = session.scalars(stmt).first()
-
-        if not cs_row:
-            warnings.warn(warn_str, UserWarning)
-            return None
-
-        toplevel = True if cs_row.name == 'top_level' else False
-        seqlevel = False
-        default = False
-        if cs_row.attrib:
-            if 'sequence_level' in cs_row.attrib:
-                seqlevel = True
-            if 'default' in cs_row.attrib:
-                default = True
-
-        return CoordSystem(cs_row.name, cs_row.version, cs_row.rank, toplevel, seqlevel, default, cs_row.species_id, cs_row.coord_system_id)
+            return self._top_level

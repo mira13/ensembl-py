@@ -1,6 +1,6 @@
 import time
-from ensembl.database.dbconnection import DBConnection
-
+from ensembl.core.data.connection import DBConnection
+from ensembl.core.CoordSystemService import CoordSystemService
 dbc = DBConnection('mysql+pymysql://ensro@mysql-ens-sta-1.ebi.ac.uk:4519/homo_sapiens_core_110_38')
 
 with dbc.session_scope() as session:
@@ -8,7 +8,7 @@ with dbc.session_scope() as session:
     slice_name = 'chromosome:GRCh38:19:2269846:2270725' # mixed strand contigs, but FWD slice
     slice_name = 'chromosome:GRCh38:19:11455000:11474118' # REV slice
     coordSystemService = CoordSystemService(session)
-
+    cs1 = coordSystemService.get_all()
     print (cs1)
 #         cs2 = CoordSystemAdaptor.fetch_by_name(session, 'contig', None)
 #         slice = SliceAdaptor.fetch_by_name(session, slice_name)

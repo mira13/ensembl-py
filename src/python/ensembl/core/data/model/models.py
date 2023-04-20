@@ -161,7 +161,7 @@ class CoordSystem(Base):
     name = Column(String(40), nullable=False)
     version = Column(String(255))
     rank = Column(INTEGER(11), nullable=False)
-    attrib = Column(SET("default_version", "sequence_level"))
+    attrib = Column(String(50))
     # Many to one relationship
     seq_region = relationship("SeqRegion", back_populates="coord_system")
 

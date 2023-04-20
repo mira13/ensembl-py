@@ -13,13 +13,5 @@
 # limitations under the License.
 """API core module"""
 
-from .Assembly import *
-from .AssemblyMapper import *
-from .Biotype import *
-from .Exon import *
-from .Feature import *
-from .Gene import *
-from .Slice import *
-from .Strand import *
-from .Transcript import *
-from .Translation import *
+from .models import *
+
