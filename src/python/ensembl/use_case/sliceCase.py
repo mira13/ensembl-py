@@ -9,8 +9,8 @@ with dbc.session_scope() as session:
     slice_name = 'chromosome:GRCh38:19:11455000:11474118' # REV slice
     coordSystemService = CoordSystemService(session)
     cs1 = coordSystemService.get_all()
-    print (cs1)
-#         cs2 = CoordSystemAdaptor.fetch_by_name(session, 'contig', None)
+    cs2 = coordSystemService.get_by_name('chromosome', None)
+    print(cs2)
 #         slice = SliceAdaptor.fetch_by_name(session, slice_name)
 #         proj = SliceAdaptor.project(session, slice, cs2)
 

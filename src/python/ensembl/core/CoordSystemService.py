@@ -33,6 +33,19 @@ class CoordSystemService:
     (despite having individual sequence versions).  In the case where a
     coordinate system does not have a version an empty string ('') is used
     instead.
+    ********
+
+    use the default version of coord_system 'chromosome' (e.g. NCBI33):
+      css.get_by_name('chromosome');
+
+    get an explicit version of coord_system 'chromosome':
+      css.get_by_name( 'chromsome', 'NCBI34' );
+
+    get all coord_systems of name 'chromosome':
+        for cs in css.get_all_by_name('chromosome'):
+            print (cs.name, cs.version)
+
+    *******
     Attributes:
         __data_source: keeps data source instance, used to retrive and store data
     Raises:
@@ -64,13 +77,13 @@ class CoordSystemService:
         top_level = True
         _top_level = cs_raw_list[0]
         for cs_raw in cs_raw_list:
-            if(cs_raw.attrib != None):
-                seqlevel = (cs_raw.attrib.find("sequence_level") > 0)
-                default = (cs_raw.attrib.find("default") > 0)
+            if (cs_raw.attrib != None):
+                seqlevel = (cs_raw.attrib.find("sequence_level") > -1)
+                default = (cs_raw.attrib.find("default_version") > -1)
             cs = CoordSystem(cs_raw.name, cs_raw.version, cs_raw.rank, top_level,
                              seqlevel, default, cs_raw.species_id,
                              cs_raw.coord_system_id)
-            if(seqlevel):
+            if (seqlevel):
                 _seq_level = cs
             result_list.append(cs)
             top_level = False
@@ -89,9 +102,6 @@ class CoordSystemService:
         Arg [2]    : str version
                      The version of the coordinate system to retrieve.  If not
                      specified the default version will be used.
-        Arg [3]    : int species_id (default: 1)
-                     The species_id the coordinate system refers to.
-                     If not specified the default value 1 will be used.
         Example    : cs_list = CoordSystemAdaptor.fetch_by_name('contig')
                      cs_list = CoordSystemAdaptor.fetch_by_name('chromosome','GRCh37')
         Description: Retrieves a coordinate system by its name
@@ -108,3 +118,12 @@ class CoordSystemService:
 
         if name == 'toplevel':
             return self._top_level
+
+        if version:
+            for cs in self.get_all():
+                if cs.name == name & cs.version == version:
+                    return cs
+        else:
+            for cs in self.get_all():
+                if (cs.name == name) & cs.is_default:
+                    return cs
