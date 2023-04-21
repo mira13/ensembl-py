@@ -18,7 +18,7 @@ from ensembl.core.data.storage.CoordSystemStorage import CoordSystemStorage
 from functools import lru_cache
 from ensembl.ui_model.Assembly import CoordSystem
 from typing import Optional
-
+import warnings
 __all__ = ['CoordSystemService']
 
 
@@ -58,6 +58,8 @@ class CoordSystemService:
     _top_level = None
     _seq_level = None
     _species_id = 1
+    warn_empty = 'Could not find any coordinate system'
+    warn_wrong_data = 'More than one coord_system found, returning only first'
 
     def __init__(self,
                  session: Session = None,
@@ -87,8 +89,50 @@ class CoordSystemService:
                 _seq_level = cs
             result_list.append(cs)
             top_level = False
+        if len(result_list) == 0:
+            warnings.warn(self.warn_empty)
 
         return result_list
+
+    def get_all_by_name(self,
+                        name: str,
+                        ) -> list[CoordSystem]:
+        """
+        Arg [1]    : str name
+                     The name of the coordinate system to retrieve.
+        Description: Retrieves all coordinate systems by its name
+        Returntype : ensembl.dbsql.CoordSystem
+        Exceptions : throw for wrong or missing arguments
+        Caller     : general
+        Status     : At Risk
+                   : under development
+        """
+
+        cs = list(filter(lambda cs: (cs.name == name), self.get_all()))
+        if len(cs) == 0:
+            warnings.warn(self.warn_empty)
+        return cs
+
+    def get_by_rank(self,
+                    rank: int,
+                    ) -> CoordSystem:
+        """
+        Arg [1]    : int rank
+                     The rank of the coordinate system to retrieve
+        Description: Retrieves a coordinate system by its rank
+        Returntype : ensembl.dbsql.CoordSystem
+        Exceptions : throw for wrong or missing arguments
+        Caller     : general
+        Status     : At Risk
+                   : under development
+        """
+        cs = list(filter(lambda cs: (cs.rank == rank),
+                         self.get_all()))
+        if len(cs) == 0:
+            warnings.warn(self.warn_empty)
+        if len(cs) > 1:
+            warnings.warn(self.warn_wrong_data + " rank: {rank}")
+        return cs[:1]
 
     def get_by_name(self,
                     name: str,
@@ -103,7 +147,8 @@ class CoordSystemService:
                      The version of the coordinate system to retrieve.  If not
                      specified the default version will be used.
         Example    : cs_list = CoordSystemAdaptor.fetch_by_name('contig')
-                     cs_list = CoordSystemAdaptor.fetch_by_name('chromosome','GRCh37')
+                     cs_list = CoordSystemAdaptor.fetch_by_name(
+                         'chromosome','GRCh37')
         Description: Retrieves a coordinate system by its name
         Returntype : ensembl.dbsql.CoordSystem
         Exceptions : throw for wrong or missing arguments
@@ -111,7 +156,6 @@ class CoordSystemService:
         Status     : At Risk
                    : under development
         """
-        warn_str = f'Could not find any coordinate system with name {name}'
 
         if name == 'seqlevel':
             return self._seq_level
@@ -120,10 +164,13 @@ class CoordSystemService:
             return self._top_level
 
         if version:
-            for cs in self.get_all():
-                if cs.name == name & cs.version == version:
-                    return cs
+            cs = list(filter(lambda csCurrent: (csCurrent.version == version),
+                             self.get_all_by_name(name)))
         else:
-            for cs in self.get_all():
-                if (cs.name == name) & cs.is_default:
-                    return cs
+            cs = list(filter(lambda csCurrent: (csCurrent.is_default),
+                             self.get_all_by_name(name)))
+        if len(cs) == 0:
+            warnings.warn(self.warn_empty)
+        if len(cs) > 1:
+            warnings.warn(self.warn_wrong_data + " name: {name}")
+        return cs[:1]
